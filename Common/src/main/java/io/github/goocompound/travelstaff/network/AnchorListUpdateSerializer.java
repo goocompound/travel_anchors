@@ -1,28 +1,25 @@
 // Modified by goocompound.
 package io.github.goocompound.travelstaff.network;
 
+import io.github.goocompound.travelstaff.TravelStaffMain;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public class AnchorListUpdateSerializer {
-    public static void encode(AnchorListUpdateMessage msg, FriendlyByteBuf buffer) {
-        buffer.writeNbt(msg.nbt);
-    }
+public final class AnchorListUpdateSerializer {
+    public record AnchorListUpdateMessage(CompoundTag nbt) implements CustomPacketPayload {
+        public static final Type<AnchorListUpdateMessage> TYPE = new Type<>(
+                Identifier.fromNamespaceAndPath(TravelStaffMain.MOD_ID, "sync_anchor_list"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, AnchorListUpdateMessage> CODEC =
+                StreamCodec.composite(ByteBufCodecs.COMPOUND_TAG, AnchorListUpdateMessage::nbt,
+                        AnchorListUpdateMessage::new);
 
-    public static AnchorListUpdateMessage decode(FriendlyByteBuf buffer) {
-        return new AnchorListUpdateMessage(buffer.readNbt());
-    }
-
-    public static class AnchorListUpdateMessage {
-
-        public AnchorListUpdateMessage() {
-
+        @Override
+        public Type<AnchorListUpdateMessage> type() {
+            return TYPE;
         }
-
-        public AnchorListUpdateMessage(CompoundTag nbt) {
-            this.nbt = nbt;
-        }
-
-        public CompoundTag nbt;
     }
 }

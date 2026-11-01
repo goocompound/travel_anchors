@@ -18,8 +18,12 @@ public class NetworkEventHandler {
         TravelAnchorList.get(level).load(nbt);
     }
 
-    public static void handleNameChange(ServerLevel level, BlockPos pos, String name){
-        if (level == null) return;
+    public static void handleNameChange(ServerPlayer player, BlockPos pos, String name){
+        ServerLevel level = player.level();
+
+        // Apply the same reach margin and world permission check as ordinary block use.
+        if (player.isSpectator() || !player.isWithinBlockInteractionRange(pos, 1.0)
+                || !level.mayInteract(player, pos)) return;
 
         if (level.hasChunkAt(pos)) {
             BlockEntity be = level.getBlockEntity(pos);
@@ -45,7 +49,7 @@ public class NetworkEventHandler {
 
             case EMPTY_HAND_INTERACT:
                 if (TeleportHandler.canBlockTeleport(player) && !player.isShiftKeyDown()) {
-                    TeleportHandler.anchorTeleport(player.getCommandSenderWorld(), player, TeleportHandler.down(player), InteractionHand.MAIN_HAND);
+                    TeleportHandler.anchorTeleport(player.level(), player, TeleportHandler.down(player), InteractionHand.MAIN_HAND);
                 }
                 break;
 
@@ -60,27 +64,10 @@ public class NetworkEventHandler {
             case ANCHOR_TP:
                 // Client has configured to use jump as telport not elevate
                 if (TeleportHandler.canBlockTeleport(player)) {
-                    TeleportHandler.anchorTeleport(player.getLevel(), player, TeleportHandler.down(player), null);
+                    TeleportHandler.anchorTeleport(player.level(), player, TeleportHandler.down(player), null);
                 }
                 break;
         }
     }
 
-    public static void handleSyncAnchorTile(Level level, CompoundTag nbt, BlockPos pos) {
-        if (level == null) return;
-
-        if (level.hasChunkAt(pos)) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof TileTravelAnchor) {
-                ((TileTravelAnchor) be).setName(nbt.getString("travel_anchor_name"));
-                ((TileTravelAnchor) be).readMimic(nbt);
-            }
-        }
-    }
-
-
-    // player changes a name on client
-    // client -> server handleNameChange
-    // then server sends it to all clients
-    // server -> client handleSyncAnchorTile
 }

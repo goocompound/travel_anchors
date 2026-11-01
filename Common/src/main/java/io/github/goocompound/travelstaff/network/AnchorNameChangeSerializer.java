@@ -1,30 +1,26 @@
 // Modified by goocompound.
 package io.github.goocompound.travelstaff.network;
 
+import io.github.goocompound.travelstaff.TravelStaffMain;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public class AnchorNameChangeSerializer {
-    public static void encode(AnchorNameChangeMessage msg, FriendlyByteBuf buffer) {
-        buffer.writeBlockPos(msg.pos);
-        buffer.writeUtf(msg.name);
-    }
+public final class AnchorNameChangeSerializer {
+    public record AnchorNameChangeMessage(BlockPos pos, String name) implements CustomPacketPayload {
+        public static final Type<AnchorNameChangeMessage> TYPE = new Type<>(
+                Identifier.fromNamespaceAndPath(TravelStaffMain.MOD_ID, "anchor_name_change"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, AnchorNameChangeMessage> CODEC =
+                StreamCodec.composite(BlockPos.STREAM_CODEC, AnchorNameChangeMessage::pos,
+                        ByteBufCodecs.stringUtf8(32767), AnchorNameChangeMessage::name,
+                        AnchorNameChangeMessage::new);
 
-    public static AnchorNameChangeMessage decode(FriendlyByteBuf buffer) {
-        return new AnchorNameChangeMessage(buffer.readBlockPos(), buffer.readUtf(32767));
-    }
-
-    public static class AnchorNameChangeMessage {
-        public BlockPos pos;
-        public String name;
-
-        public AnchorNameChangeMessage() {
-
-        }
-
-        public AnchorNameChangeMessage(BlockPos pos, String name) {
-            this.pos = pos;
-            this.name = name;
+        @Override
+        public Type<AnchorNameChangeMessage> type() {
+            return TYPE;
         }
     }
 }

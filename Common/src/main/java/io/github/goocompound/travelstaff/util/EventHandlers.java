@@ -13,12 +13,12 @@ import net.minecraft.world.level.Level;
 public class EventHandlers {
     // not in use on item because has to check for teleport enchant as well
     public static InteractionResult onRightClick(Player player, InteractionHand hand, ItemStack stack) {
-        Level level = player.level;
+        Level level = player.level();
         if (TeleportHandler.canPlayerTeleport(player, hand) && !stack.isEmpty()) {
             if (player.isShiftKeyDown() && TeleportHandler.canItemTeleport(player, hand)) {
-                if (player.getCooldowns().isOnCooldown(stack.getItem())) return InteractionResult.PASS;
+                if (player.getCooldowns().isOnCooldown(stack)) return InteractionResult.PASS;
                 if (TeleportHandler.shortTeleport(level, player, hand)) {
-                    player.getCooldowns().addCooldown(stack.getItem(), TravelStaffMain.CONFIG.get().staffCooldownTicks);
+                    player.getCooldowns().addCooldown(stack, TravelStaffMain.getConfig(level).staffCooldownTicks);
                     return InteractionResult.SUCCESS;
                 }
             } else {
@@ -45,13 +45,13 @@ public class EventHandlers {
             // this event or PlayerInteractEvent.RightClickItem
             if (TeleportHandler.canPlayerTeleport(player, hand)) {
                 if (!player.isShiftKeyDown()) {
-                    if (player.level.isClientSide()){
+                    if (player.level().isClientSide()){
                         // fabric
                         Services.NETWORK.sendClientEventToServer(ClientEventSerializer.ClientEvent.EMPTY_HAND_INTERACT);
                         return InteractionResult.FAIL; // stops the block from processing the interaction
                     } else {
                         // forge
-                        if (TeleportHandler.anchorTeleport(player.level, player, TeleportHandler.down(player), hand)) {
+                        if (TeleportHandler.anchorTeleport(player.level(), player, TeleportHandler.down(player), hand)) {
                             return InteractionResult.FAIL; // stops the block from processing the interaction
                         }
                     }

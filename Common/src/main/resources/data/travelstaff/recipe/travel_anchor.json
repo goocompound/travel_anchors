@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "X#X",
+    "#O#",
+    "X#X"
+  ],
+  "key": {
+    "X": "minecraft:iron_block",
+    "#": "minecraft:iron_ingot",
+    "O": "minecraft:ender_pearl"
+  },
+  "result": {
+    "id": "travelstaff:travel_anchor"
+  }
+}

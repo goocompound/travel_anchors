@@ -1,57 +1,59 @@
 // Modified by goocompound.
 package io.github.goocompound.travelstaff;
 
-import ca.lukegrahamlandry.lib.registry.RegistryWrapper;
 import io.github.goocompound.travelstaff.block.BlockTravelAnchor;
 import io.github.goocompound.travelstaff.block.TileTravelAnchor;
-import io.github.goocompound.travelstaff.enchantments.RangeEnchantment;
-import io.github.goocompound.travelstaff.enchantments.TeleportationEnchantment;
 import io.github.goocompound.travelstaff.item.ItemTravelStaff;
-import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.network.chat.ComponentContents;
+import io.github.goocompound.travelstaff.item.ItemTravelAnchor;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.BlockItem;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
 
+import java.util.Set;
 import java.util.function.Supplier;
-import java.util.List;
 
-public class TravelAnchorRegistry {
-    public static final RegistryWrapper<Block> BLOCKS = RegistryWrapper.create(BuiltInRegistries.BLOCK, TravelStaffMain.MOD_ID);
-    public static final Supplier<Block> TRAVEL_ANCHOR = BLOCKS.register("travel_anchor", BlockTravelAnchor::new);
+public final class TravelAnchorRegistry {
+    private static final ResourceKey<Block> ANCHOR_KEY = ResourceKey.create(Registries.BLOCK, id("travel_anchor"));
+    private static final ResourceKey<Item> STAFF_KEY = ResourceKey.create(Registries.ITEM, id("travel_staff"));
+    private static final ResourceKey<Item> ANCHOR_ITEM_KEY = ResourceKey.create(Registries.ITEM, id("travel_anchor"));
 
-    public static final RegistryWrapper<Item> ITEMS = RegistryWrapper.create(BuiltInRegistries.ITEM, TravelStaffMain.MOD_ID);
-    public static final Supplier<Item> STAFF = ITEMS.register(new ResourceLocation(TravelStaffMain.MOD_ID, "travel_staff").getPath(), () -> new ItemTravelStaff(new Item.Properties()));
-    public static final Supplier<Item> ANCHOR_ITEM = ITEMS.register("travel_anchor", () -> new BlockItem(TRAVEL_ANCHOR.get(), new Item.Properties()));
+    private static final Block ANCHOR = Registry.register(BuiltInRegistries.BLOCK, ANCHOR_KEY,
+            new BlockTravelAnchor(BlockBehaviour.Properties.of().setId(ANCHOR_KEY)
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops().strength(2.0F, 6.0F)));
+    private static final Item STAFF_ITEM = Registry.register(BuiltInRegistries.ITEM, STAFF_KEY,
+            new ItemTravelStaff(new Item.Properties().setId(STAFF_KEY).enchantable(20)));
+    private static final Item ANCHOR_BLOCK_ITEM = Registry.register(BuiltInRegistries.ITEM, ANCHOR_ITEM_KEY,
+            new ItemTravelAnchor(ANCHOR, new Item.Properties().setId(ANCHOR_ITEM_KEY).useBlockDescriptionPrefix()));
+    private static final BlockEntityType<TileTravelAnchor> ANCHOR_TYPE = Registry.register(
+            BuiltInRegistries.BLOCK_ENTITY_TYPE, id("travel_anchor"),
+            new BlockEntityType<>(TileTravelAnchor::new, Set.of(ANCHOR)));
 
-    public static final RegistryWrapper<Enchantment> ENCHANTMENTS = RegistryWrapper.create(BuiltInRegistries.ENCHANTMENT, TravelStaffMain.MOD_ID);
-    public static final Supplier<Enchantment> RANGE = ENCHANTMENTS.register("range", () -> RangeEnchantment.INSTANCE);
-    public static final Supplier<Enchantment> TELEPORTATION = ENCHANTMENTS.register("teleportation", () -> TeleportationEnchantment.INSTANCE);
+    public static final Supplier<Block> TRAVEL_ANCHOR = () -> ANCHOR;
+    public static final Supplier<Item> STAFF = () -> STAFF_ITEM;
+    public static final Supplier<Item> ANCHOR_ITEM = () -> ANCHOR_BLOCK_ITEM;
+    public static final Supplier<BlockEntityType<TileTravelAnchor>> TRAVEL_ANCHOR_TILE = () -> ANCHOR_TYPE;
 
-    public static final RegistryWrapper<BlockEntityType<?>> TILE_ENTITY_TYPES = RegistryWrapper.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, TravelStaffMain.MOD_ID);
-    public static final Supplier<BlockEntityType<TileTravelAnchor>> TRAVEL_ANCHOR_TILE = TILE_ENTITY_TYPES.register("travel_anchor",
-            () -> BlockEntityType.Builder.of(TileTravelAnchor::new, TRAVEL_ANCHOR.get()).build(null));
+    // Enchantments are supplied by data packs and resolved against the current world.
+    public static final ResourceKey<Enchantment> RANGE = ResourceKey.create(Registries.ENCHANTMENT, id("range"));
+    public static final ResourceKey<Enchantment> TELEPORTATION = ResourceKey.create(Registries.ENCHANTMENT, id("teleportation"));
 
-    public static void fillItemCategory(CreativeModeTab tab, List<ItemStack> items) {
-	    ComponentContents contents = tab.getDisplayName().getContents();
-	    if (!(contents instanceof TranslatableContents)) {
-		    return;
-	    }
+    private TravelAnchorRegistry() {}
 
-	    String tabName = ((TranslatableContents) contents).getKey();
-
-	    if (tabName.equals("itemGroup.tools")) {
-		   items.add(new ItemStack(STAFF.get()));
-	    }
-	    if (tabName.equals("itemGroup.redstone")) {
-		   items.add(new ItemStack(ANCHOR_ITEM.get()));
-	    }
+    public static void init() {
+        // Loading this class registers the fixed block, item and block-entity types.
     }
+
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(TravelStaffMain.MOD_ID, path);
+    }
+
 }

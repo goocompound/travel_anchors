@@ -3,13 +3,11 @@ package io.github.goocompound.travelstaff.platform;
 
 import io.github.goocompound.travelstaff.TravelStaffMain;
 import io.github.goocompound.travelstaff.platform.services.INetworkHelper;
-import io.github.goocompound.travelstaff.platform.services.IPlatformHelper;
 
 import java.util.ServiceLoader;
 
 public class Services {
 
-    public static final IPlatformHelper PLATFORM = load(IPlatformHelper.class);
     public static final INetworkHelper NETWORK = load(INetworkHelper.class);
 
     public static <T> T load(Class<T> clazz) {

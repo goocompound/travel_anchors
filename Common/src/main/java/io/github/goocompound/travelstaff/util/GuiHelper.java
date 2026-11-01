@@ -7,6 +7,6 @@ import net.minecraft.core.BlockPos;
 
 public class GuiHelper {
     public static void openAnchorGui(String name, BlockPos pos) {
-        Minecraft.getInstance().setScreen(new ScreenTravelAnchor(name, pos));
+        Minecraft.getInstance().gui.setScreen(new ScreenTravelAnchor(name, pos));
     }
 }

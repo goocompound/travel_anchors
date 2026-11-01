@@ -1,40 +1,32 @@
 // Modified by goocompound.
 package io.github.goocompound.travelstaff;
 
-import ca.lukegrahamlandry.lib.event.fabric.WrapperLibClientInitializer;
-import io.github.goocompound.travelstaff.block.RenderTravelAnchor;
-import io.github.goocompound.travelstaff.network.AnchorListUpdateSerializer;
-import io.github.goocompound.travelstaff.network.SyncAnchorTileSerializer;
+import io.github.goocompound.travelstaff.config.TravelStaffConfig;
+import io.github.goocompound.travelstaff.network.AnchorListUpdateSerializer.AnchorListUpdateMessage;
+import io.github.goocompound.travelstaff.network.SyncedConfigPayload;
+import io.github.goocompound.travelstaff.render.TravelAnchorRenderer;
 import io.github.goocompound.travelstaff.util.NetworkEventHandler;
+import io.github.goocompound.travelstaff.util.TravelAnchorList;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
-import net.minecraft.client.Minecraft;
-
-import static io.github.goocompound.travelstaff.FabricNetworkHandler.SYNC_ANCHOR_LIST;
-import static io.github.goocompound.travelstaff.FabricNetworkHandler.SYNC_ANCHOR_TILE;
 
 @Environment(EnvType.CLIENT)
 public class FabricModClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        new WrapperLibClientInitializer().onInitializeClient();
-        BlockEntityRendererRegistry.register(TravelAnchorRegistry.TRAVEL_ANCHOR_TILE.get(), (ctx) -> new RenderTravelAnchor());
-        initClientPackets();
-    }
-
-    @Environment(EnvType.CLIENT)
-    public static void initClientPackets(){
-        ClientPlayNetworking.registerGlobalReceiver(SYNC_ANCHOR_LIST, (client, handler, data, responseSender) -> {
-            AnchorListUpdateSerializer.AnchorListUpdateMessage msg = AnchorListUpdateSerializer.decode(data);
-            client.execute(() -> NetworkEventHandler.handleClientUpdateAnchorList(Minecraft.getInstance().level, msg.nbt));
-        });
-
-        ClientPlayNetworking.registerGlobalReceiver(SYNC_ANCHOR_TILE, (client, handler, data, responseSender) -> {
-            SyncAnchorTileSerializer.AnchorTileMessage msg = SyncAnchorTileSerializer.decode(data);
-            client.execute(() -> NetworkEventHandler.handleSyncAnchorTile(Minecraft.getInstance().level, msg.nbt, msg.pos));
+        TravelStaffConfig.loadClient();
+        TravelAnchorRenderer.init();
+        ClientPlayNetworking.registerGlobalReceiver(AnchorListUpdateMessage.TYPE, (message, context) ->
+                context.client().execute(() -> NetworkEventHandler.handleClientUpdateAnchorList(
+                        context.client().level, message.nbt())));
+        ClientPlayNetworking.registerGlobalReceiver(SyncedConfigPayload.TYPE, (message, context) ->
+                context.client().execute(() -> TravelStaffConfig.applySynced(message.toConfig())));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            TravelStaffConfig.resetClient();
+            TravelAnchorList.clearClient();
         });
     }
 }

@@ -2,17 +2,13 @@
   "required": true,
   "minVersion": "0.8",
   "package": "io.github.goocompound.travelstaff.mixin",
-  "compatibilityLevel": "JAVA_16",
-  "mixins": [
-    "ServerPlayerMixin"
-  ],
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [],
   "client": [
-    "GameRendererMixin",
     "KeyboardHandlerMixin",
     "MinecraftMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   }
-  }
-  
+}

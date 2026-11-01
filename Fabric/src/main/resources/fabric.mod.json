@@ -33,11 +33,10 @@
     "travelstaff.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.13",
-    "fabric": "*",
-    "minecraft": "1.19.3",
-    "java": ">=17",
-    "wrapperlib": ">=1.1"
+    "fabricloader": ">=0.19.5",
+    "fabric-api": "*",
+    "minecraft": "~26.3",
+    "java": ">=25"
   },
   "accessWidener": "travelstaff-fabric.accesswidener"
 }

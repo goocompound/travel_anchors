@@ -1,42 +1,40 @@
 // Modified by goocompound.
 package io.github.goocompound.travelstaff;
 
+import io.github.goocompound.travelstaff.config.TravelStaffConfig;
 import io.github.goocompound.travelstaff.platform.Services;
 import io.github.goocompound.travelstaff.util.EventHandlers;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.BlockHitResult;
 
-public class FabricEventListener {
-    public static void init(){
-        ServerPlayConnectionEvents.JOIN.register(FabricEventListener::onJoin);
-        UseItemCallback.EVENT.register(FabricEventListener::onUseItem);
-        UseBlockCallback.EVENT.register(FabricEventListener::onUseBlock);
-    }
+public final class FabricEventListener {
+    public static void init() {
+        ServerLifecycleEvents.SERVER_STARTING.register(TravelStaffConfig::startServer);
+        ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) -> {
+            TravelStaffConfig.reloadServer(server);
+            server.getPlayerList().getPlayers().forEach(FabricNetworkHandler::sendConfig);
+        });
+        ServerLifecycleEvents.SERVER_STOPPED.register(TravelStaffConfig::stopServer);
 
-    private static InteractionResult onUseBlock(Player player, Level level, InteractionHand hand, BlockHitResult blockHitResult) {
-        ItemStack stack = player.getItemInHand(hand);
-        if (!stack.isEmpty()) return InteractionResult.PASS;
-        return EventHandlers.onEmptyBlockClick(player, hand, stack);
-    }
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            FabricNetworkHandler.sendConfig(handler.player);
+            Services.NETWORK.sendAnchorListToClient(handler.player);
+        });
+        ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, origin, destination) ->
+                Services.NETWORK.sendAnchorListToClient(player));
+        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
+                Services.NETWORK.sendAnchorListToClient(newPlayer));
 
-    private static InteractionResultHolder<ItemStack> onUseItem(Player player, Level level, InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-        InteractionResult result = EventHandlers.onRightClick(player, hand, stack);
-        return result == InteractionResult.PASS ? InteractionResultHolder.pass(stack) : InteractionResultHolder.success(stack);
-    }
-
-    private static void onJoin(ServerGamePacketListenerImpl handler, PacketSender sender, MinecraftServer server){
-        Services.NETWORK.sendAnchorListToClient(handler.player);
+        UseItemCallback.EVENT.register((player, level, hand) ->
+                EventHandlers.onRightClick(player, hand, player.getItemInHand(hand)));
+        UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+            var stack = player.getItemInHand(hand);
+            return stack.isEmpty() ? EventHandlers.onEmptyBlockClick(player, hand, stack) : InteractionResult.PASS;
+        });
     }
 }

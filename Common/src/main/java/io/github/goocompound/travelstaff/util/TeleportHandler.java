@@ -4,16 +4,21 @@ package io.github.goocompound.travelstaff.util;
 import io.github.goocompound.travelstaff.TravelAnchorRegistry;
 import io.github.goocompound.travelstaff.TravelStaffMain;
 import io.github.goocompound.travelstaff.block.TileTravelAnchor;
-import io.github.goocompound.travelstaff.enchantments.RangeEnchantment;
-import io.github.goocompound.travelstaff.enchantments.TeleportationEnchantment;
 import io.github.goocompound.travelstaff.item.ItemTravelStaff;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.component.SwingAnimation;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -47,7 +52,7 @@ public class TeleportHandler {
                         double angle1 = Math.abs(getAngleRadians(positionVec, p1.getLeft(), player.getYRot(), player.getXRot()));
                         double angle2 = Math.abs(getAngleRadians(positionVec, p2.getLeft(), player.getYRot(), player.getXRot()));
                         return Double.compare(angle1, angle2);
-                    }).filter(p -> Math.abs(getAngleRadians(positionVec, p.getLeft(), player.getYRot(), player.getXRot())) <= Math.toRadians(TravelStaffMain.CONFIG.get().maxAngle))
+                    }).filter(p -> Math.abs(getAngleRadians(positionVec, p.getLeft(), player.getYRot(), player.getXRot())) <= Math.toRadians(TravelStaffMain.getConfig(level).maxAngle))
                     .filter(p -> canTeleportTo(level, p.getLeft()));
             return anchor.orElse(null);
         } else {
@@ -57,7 +62,7 @@ public class TeleportHandler {
     
     public static boolean teleportPlayer(Player player, @Nullable Pair<BlockPos, String> anchor, @Nullable InteractionHand hand) {
         if (anchor != null) {
-            if (!player.getLevel().isClientSide) {
+            if (!player.level().isClientSide()) {
                 Vec3 teleportVec = checkTeleport(player, anchor.getLeft().above());
                 if (teleportVec == null) {
                     return false;
@@ -66,16 +71,16 @@ public class TeleportHandler {
             }
             player.fallDistance = 0;
             if (hand != null) {
-                player.swing(hand, true);
+                player.swing(hand, SwingAnimation.DEFAULT, true);
             }
-            player.playNotifySound(SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1F, 1F);
-            if (!player.level.isClientSide) {
-                player.displayClientMessage(Component.translatable("travelstaff.tp.success", anchor.getRight()), true);
+            playTeleportSound(player);
+            if (!player.level().isClientSide()) {
+                player.sendOverlayMessage(Component.translatable("travelstaff.tp.success", anchor.getRight()));
             }
             return true;
         } else {
-            if (!player.level.isClientSide) {
-                player.displayClientMessage(Component.translatable("travelstaff.tp.fail"), true);
+            if (!player.level().isClientSide()) {
+                player.sendOverlayMessage(Component.translatable("travelstaff.tp.fail"));
             }
             return false;
         }
@@ -85,9 +90,9 @@ public class TeleportHandler {
         Vec3 targetVec = player.position().add(0, player.getEyeHeight(), 0);
         Vec3 lookVec = player.getLookAngle();
         BlockPos target = null;
-        for (double i = TravelStaffMain.CONFIG.get().shortTeleportDistance; i >= 2; i -= 0.5) {
+        for (double i = TravelStaffMain.getConfig(level).shortTeleportDistance; i >= 2; i -= 0.5) {
             Vec3 v3d = targetVec.add(lookVec.multiply(i, i, i));
-            target = new BlockPos(Math.round(v3d.x), Math.round(v3d.y), Math.round(v3d.z));
+            target = BlockPos.containing(Math.round(v3d.x), Math.round(v3d.y), Math.round(v3d.z));
             if (canTeleportTo(level, target.below())) { //to use the same check as the anchors use the position below
                 break;
             } else {
@@ -95,7 +100,7 @@ public class TeleportHandler {
             }
         }
         if (target != null) {
-            if (!player.getLevel().isClientSide) {
+            if (!player.level().isClientSide()) {
                 Vec3 teleportVec = checkTeleport(player, target);
                 if (teleportVec == null) {
                     return false;
@@ -103,12 +108,12 @@ public class TeleportHandler {
                 player.teleportTo(teleportVec.x()+0.5, teleportVec.y(), teleportVec.z()+0.5);
             }
             player.fallDistance = 0;
-            player.swing(hand, true);
-            player.playNotifySound(SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1F, 1F);
+            player.swing(hand, SwingAnimation.DEFAULT, true);
+            playTeleportSound(player);
             return true;
         } else {
-            if (!player.level.isClientSide) {
-                player.displayClientMessage(Component.translatable("travelstaff.hop.fail"), true);
+            if (!player.level().isClientSide()) {
+                player.sendOverlayMessage(Component.translatable("travelstaff.hop.fail"));
             }
             return false;
         }
@@ -117,7 +122,7 @@ public class TeleportHandler {
     public static boolean canTeleportTo(BlockGetter level, BlockPos target) {
         return !fullBlockAt(level, target.immutable().above(1))
                 && !fullBlockAt(level, target.immutable().above(2))
-                && target.getY() >= level.getMinBuildHeight();
+                && target.getY() >= level.getMinY();
     }
 
     private static boolean fullBlockAt(BlockGetter level, BlockPos target){
@@ -132,16 +137,34 @@ public class TeleportHandler {
     }
 
     public static BlockPos down(Player player){
-        return new BlockPos(player.getBoundingBox().getCenter().x, player.getY(), player.getBoundingBox().getCenter().z).below();
+        return BlockPos.containing(player.getBoundingBox().getCenter().x, player.getY(), player.getBoundingBox().getCenter().z).below();
     }
 
     public static boolean canBlockTeleport(Player player) {
-        return player.getLevel().getBlockState(down(player)).getBlock() == TravelAnchorRegistry.TRAVEL_ANCHOR.get();// && !player.isShiftKeyDown();
+        return player.level().getBlockState(down(player)).getBlock() == TravelAnchorRegistry.TRAVEL_ANCHOR.get();// && !player.isShiftKeyDown();
     }
 
     public static boolean canItemTeleport(Player player, InteractionHand hand) {
         return player.getItemInHand(hand).getItem() instanceof ItemTravelStaff
-                || EnchantmentHelper.getItemEnchantmentLevel(TeleportationEnchantment.INSTANCE, player.getItemInHand(hand)) >= 1;
+                || getEnchantmentLevel(player, hand, TravelAnchorRegistry.TELEPORTATION) >= 1;
+    }
+
+    private static int getEnchantmentLevel(Player player, InteractionHand hand, ResourceKey<Enchantment> enchantment) {
+        return EnchantmentHelper.getItemEnchantmentLevel(
+                player.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(enchantment),
+                player.getItemInHand(hand));
+    }
+
+    private static void playTeleportSound(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.connection.send(new ClientboundSoundPacket(
+                    BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.ENDERMAN_TELEPORT),
+                    SoundSource.PLAYERS, player.getX(), player.getY(), player.getZ(), 1F, 1F,
+                    player.getRandom().nextLong()));
+        } else if (player.isLocalPlayer()) {
+            player.level().playLocalSound(player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1F, 1F, false);
+        }
     }
 
     private static double getAngleRadians(Vec3 positionVec, BlockPos anchor, float yRot, float xRot) {
@@ -151,15 +174,15 @@ public class TeleportHandler {
     }
 
     public static double getMaxDistance(Player player) {
-        int mainHandLevel = EnchantmentHelper.getItemEnchantmentLevel(RangeEnchantment.INSTANCE, player.getItemInHand(InteractionHand.MAIN_HAND));
-        int offHandLevel = EnchantmentHelper.getItemEnchantmentLevel(RangeEnchantment.INSTANCE, player.getItemInHand(InteractionHand.OFF_HAND));
+        int mainHandLevel = getEnchantmentLevel(player, InteractionHand.MAIN_HAND, TravelAnchorRegistry.RANGE);
+        int offHandLevel = getEnchantmentLevel(player, InteractionHand.OFF_HAND, TravelAnchorRegistry.RANGE);
         int lvl = Math.max(mainHandLevel, offHandLevel);
-        return TravelStaffMain.CONFIG.get().maxTeleportDistance * (1 + (lvl * TravelStaffMain.CONFIG.get().rangeEnchantScaling));
+        return TravelStaffMain.getConfig(player.level()).maxTeleportDistance * (1 + (lvl * TravelStaffMain.getConfig(player.level()).rangeEnchantScaling));
     }
     
     public static boolean canElevate(Player player) {
         if (player != null) {
-            return player.getLevel().getBlockState(down(player)).getBlock() == TravelAnchorRegistry.TRAVEL_ANCHOR.get();
+            return player.level().getBlockState(down(player)).getBlock() == TravelAnchorRegistry.TRAVEL_ANCHOR.get();
         }
         return false;
     }
@@ -168,7 +191,7 @@ public class TeleportHandler {
         if (!canElevate(player)) {
             return false;
         }
-        Level level = player.getLevel();
+        Level level = player.level();
         BlockPos.MutableBlockPos searchPos = player.blockPosition().immutable().mutable();
         while (!level.isOutsideBuildHeight(searchPos) && (level.getBlockState(searchPos).getBlock() != TravelAnchorRegistry.TRAVEL_ANCHOR.get() || !canTeleportTo(level, searchPos))) {
             searchPos.move(Direction.UP);
@@ -192,7 +215,7 @@ public class TeleportHandler {
         if (!canElevate(player)) {
             return false;
         }
-        Level level = player.getLevel();
+        Level level = player.level();
         BlockPos.MutableBlockPos searchPos = player.blockPosition().immutable().below(2).mutable();
         while (!level.isOutsideBuildHeight(searchPos) && (level.getBlockState(searchPos).getBlock() != TravelAnchorRegistry.TRAVEL_ANCHOR.get() || !canTeleportTo(level, searchPos))) {
             searchPos.move(Direction.DOWN);

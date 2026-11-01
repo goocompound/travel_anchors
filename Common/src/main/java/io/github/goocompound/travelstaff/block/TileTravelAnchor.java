@@ -2,98 +2,92 @@
 package io.github.goocompound.travelstaff.block;
 
 import io.github.goocompound.travelstaff.TravelAnchorRegistry;
-import io.github.goocompound.travelstaff.TravelStaffMain;
-import io.github.goocompound.travelstaff.platform.Services;
 import io.github.goocompound.travelstaff.util.TravelAnchorList;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-
-import javax.annotation.Nonnull;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public class TileTravelAnchor extends BlockEntity {
-    private BlockState mimic = null;
-    String name = "";
+    private BlockState mimic;
+    private String name = "";
 
     public TileTravelAnchor(BlockPos pos, BlockState state) {
         super(TravelAnchorRegistry.TRAVEL_ANCHOR_TILE.get(), pos, state);
     }
 
     @Override
-    public void saveAdditional(CompoundTag compound) {
-        compound.putString("travel_anchor_name", this.name);
-        this.writeMimic(compound);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        output.putString("travel_anchor_name", name);
+        output.store("mimic", BlockState.FULL_CODEC,
+                mimic == null ? TravelAnchorRegistry.TRAVEL_ANCHOR.get().defaultBlockState() : mimic);
     }
 
     @Override
-    public void load(@Nonnull CompoundTag nbt) {
-        super.load(nbt);
-        this.name = nbt.getString("travel_anchor_name");
-        this.readMimic(nbt);
-        if (this.level != null) {
-            TravelAnchorList.get(this.level).setAnchor(this.level, this.worldPosition, this.name, this.mimic);
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        name = input.getStringOr("travel_anchor_name", "");
+        BlockState state = input.read("mimic", BlockState.CODEC)
+                .orElse(TravelAnchorRegistry.TRAVEL_ANCHOR.get().defaultBlockState());
+        mimic = state.is(TravelAnchorRegistry.TRAVEL_ANCHOR.get()) ? null : state;
+        if (level != null) {
+            TravelAnchorList.get(level).setAnchor(level, worldPosition, name, mimic);
         }
     }
 
-    private void writeMimic(CompoundTag tag) {
-        tag.put("mimic", NbtUtils.writeBlockState(this.mimic == null ? TravelAnchorRegistry.TRAVEL_ANCHOR.get().defaultBlockState() : this.mimic));
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return saveWithoutMetadata(registries);
     }
 
-    public void readMimic(CompoundTag tag) {
-        if (tag.contains("mimic")) {
-            BlockState state = NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), tag.getCompound("mimic"));
-            if (state == TravelAnchorRegistry.TRAVEL_ANCHOR.get().defaultBlockState()) {
-                this.mimic = null;
-            } else {
-                this.mimic = state;
-            }
-        }
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     public String getName() {
-        return this.name;
+        return name;
     }
 
     public void setName(String name) {
         this.name = name;
-        if (this.level != null) {
-            TravelAnchorList.get(this.level).setAnchor(this.level, this.worldPosition, name, this.mimic);
+        if (level != null) {
+            TravelAnchorList.get(level).setAnchor(level, worldPosition, name, mimic);
         }
     }
 
     public BlockState getMimic() {
-        if (this.mimic == null) {
-            // when you relog, the tile doesnt sync to the client but the list does so if the state is unset it might be set on the list
-            TravelAnchorList.Entry entry = TravelAnchorList.get(this.level).getEntry(this.worldPosition);
-            if (entry != null) this.mimic = entry.state;
-        }
-        return this.mimic;
+        return mimic;
     }
 
     public void setMimic(BlockState mimic) {
         this.mimic = mimic;
-        if (this.level != null) {
-            TravelAnchorList.get(this.level).setAnchor(this.level, this.worldPosition, this.name, mimic);
+        if (level != null) {
+            TravelAnchorList.get(level).setAnchor(level, worldPosition, name, mimic);
         }
-        this.setChanged();
+        setChanged();
+    }
+
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level != null && !level.isClientSide()) {
+            TravelAnchorList.get(level).setAnchor(level, pos, null,
+                    TravelAnchorRegistry.TRAVEL_ANCHOR.get().defaultBlockState());
+        }
     }
 
     @Override
     public void setChanged() {
         super.setChanged();
-        if (!this.level.isClientSide()) Services.NETWORK.syncAnchorToClients(this);
+        if (level != null && !level.isClientSide()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
     }
-
-//
-//    @Override
-//    public void onLoad() {
-//        super.onLoad();
-//        if (this.level != null) {
-//            TravelAnchorList.get(this.level).setAnchor(this.level, this.worldPosition, this.name, this.mimic);
-//        }
-//    }
 }

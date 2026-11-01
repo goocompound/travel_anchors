@@ -1,63 +1,65 @@
-buildscript {
-    configurations.classpath {
-        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-    }
-}
-
 plugins {
-    id "architectury-plugin" version "3.4-SNAPSHOT"
-    id "dev.architectury.loom" version "1.0-SNAPSHOT" apply false
-    id "io.github.juuxel.loom-quiltflower" version "1.7.2" apply false
-    id "maven-publish"
+    id 'net.fabricmc.fabric-loom' version '1.19.3'
 }
 
-architectury {
-    minecraft = rootProject.minecraft_version
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
 }
 
-subprojects {
-    apply plugin: "dev.architectury.loom"
-    apply plugin: "io.github.juuxel.loom-quiltflower"
+repositories {
+    mavenCentral()
+}
 
-    archivesBaseName = rootProject.archives_base_name + "-${project.name}"
-    version = rootProject.mod_version
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+    testImplementation platform('org.junit:junit-bom:5.12.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
 
-    loom {
-        silentMojangMappingsLicense()
-    }
-
-    dependencies {
-        minecraft "com.mojang:minecraft:${rootProject.architectury.minecraft}"
-        mappings loom.officialMojangMappings()
-    }
-
-    repositories {
-        maven {
-            url = "https://maven.lukegrahamlandry.ca"
-        }
+sourceSets {
+    main {
+        java.srcDirs = ['Common/src/main/java', 'Fabric/src/main/java']
+        resources.srcDirs = ['Common/src/main/resources', 'Fabric/src/main/resources']
     }
 }
 
-allprojects {
-    apply plugin: "java"
-    apply plugin: "architectury-plugin"
-
-    def targetJavaVersion = 17
-    tasks.withType(JavaCompile) {
-        options.encoding = "UTF-8"
-
-        if (JavaVersion.current().isJava9Compatible()) {
-            options.release = targetJavaVersion
-        }
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
     }
+}
 
-    java {
-        def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-        if (JavaVersion.current() < javaVersion) {
-            toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-        }
-        archivesBaseName = rootProject.archives_base_name
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
 
-        withSourcesJar()
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+test {
+    useJUnitPlatform()
+    workingDir = layout.buildDirectory.get().asFile
+}
+
+jar {
+    from('LICENSE') {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+}
+
+tasks.named('sourcesJar') {
+    from('LICENSE') {
+        rename { "${it}_${project.archives_base_name}" }
     }
 }

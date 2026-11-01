@@ -1,7 +1,7 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "ca.lukegrahamlandry.travelstaff.mixin",
+  "package": "io.github.goocompound.travelstaff.mixin",
   "compatibilityLevel": "JAVA_16",
   "mixins": [
     "ServerPlayerMixin"

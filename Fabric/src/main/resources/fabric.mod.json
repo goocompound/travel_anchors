@@ -1,46 +1,43 @@
 {
-    "schemaVersion": 1,
-    "id": "travelstaff",
-    "version": "${version}",
-  
-    "name": "Staff of Traveling",
-    "description": "Brings the Travel Anchors from EnderIO into a standalone mod. \nIncludes LukeGrahamLandry/WrapperLib (MPL 2.0)",
-    "authors": [
-      "LukeGrahamLandry#6888",
-      "CastCrafter",
-      "MelanX",
-      "noeppinoeppi"
+  "schemaVersion": 1,
+  "id": "travelstaff",
+  "version": "${version}",
+  "name": "Staff of Traveling",
+  "description": "Brings the Travel Anchors from EnderIO into a standalone mod. Updates the existing Fabric version to Minecraft 26.3; maintained by goocompound.",
+  "authors": [
+    "LukeGrahamLandry#6888",
+    "CastCrafter",
+    "MelanX",
+    "noeppinoeppi",
+    "goocompound"
+  ],
+  "contact": {
+    "homepage": "https://github.com/goocompound/travel_anchors",
+    "sources": "https://github.com/goocompound/travel_anchors",
+    "issues": "https://github.com/goocompound/travel_anchors/issues"
+  },
+  "license": "Apache-2.0",
+  "icon": "assets/travelstaff/textures/item/travel_staff.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "io.github.goocompound.travelstaff.FabricModMain"
     ],
-    "contact": {
-      "homepage": "https://moddingtutorials.org/commissions",
-      "sources": "https://github.com/LukeGrahamLandryMC/travel_anchors"
-    },
-  
-    "license": "Apache 2.0",
-    "icon": "assets/travelstaff/textures/item/travel_staff.png",
-  
-    "environment": "*",
-    "entrypoints": {
-      "main": [
-        "ca.lukegrahamlandry.travelstaff.FabricModMain"
-      ],
-      "client": [
-        {
-          "value": "ca.lukegrahamlandry.travelstaff.FabricModClient"
-        }
-      ]
-    },
-    "mixins": [
-      "travelstaff.mixins.json"
-    ],
-  
-    "depends": {
-      "fabricloader": ">=0.13",
-      "fabric": "*",
-      "minecraft": "1.19.3",
-      "java": ">=17",
-      "wrapperlib": ">=1.1"
-    },
-  "accessWidener" : "travelstaff-fabric.accesswidener"
+    "client": [
+      {
+        "value": "io.github.goocompound.travelstaff.FabricModClient"
+      }
+    ]
+  },
+  "mixins": [
+    "travelstaff.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.13",
+    "fabric": "*",
+    "minecraft": "1.19.3",
+    "java": ">=17",
+    "wrapperlib": ">=1.1"
+  },
+  "accessWidener": "travelstaff-fabric.accesswidener"
 }
-  

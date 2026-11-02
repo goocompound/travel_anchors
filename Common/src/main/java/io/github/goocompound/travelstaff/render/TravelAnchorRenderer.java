@@ -42,6 +42,7 @@ import java.util.List;
 public final class TravelAnchorRenderer {
     private static final RenderStateDataKey<Frame> FRAME = RenderStateDataKey.create(() -> "travelstaff:anchors");
     private static final BlockDisplayContext DISPLAY_CONTEXT = BlockDisplayContext.create();
+    private static final double NAME_SCALE = 0.7;
     private static BlockModelResolver modelResolver;
 
     private TravelAnchorRenderer() {
@@ -69,7 +70,7 @@ public final class TravelAnchorRenderer {
             TravelAnchorList list = TravelAnchorList.get(level);
             for (BlockPos pos : list.anchors.keySet()) {
                 double distanceSq = pos.distToLowCornerSqr(playerPosition.x, playerPosition.y, playerPosition.z);
-                if (distanceSq > maxDistanceSq) continue;
+                if (!isWithinOverlayRange(distanceSq, maxDistanceSq)) continue;
                 TravelAnchorList.Entry entry = list.getEntry(pos);
                 if (entry == null) continue;
                 BlockState state = entry.state == null ? TravelAnchorRegistry.TRAVEL_ANCHOR.get().defaultBlockState() : entry.state;
@@ -87,6 +88,10 @@ public final class TravelAnchorRenderer {
                 new Frame(List.copyOf(anchors), fovScale, background, minecraft.font.lineHeight));
     }
 
+    public static boolean isWithinOverlayRange(double distanceSq, double maxDistanceSq) {
+        return distanceSq <= maxDistanceSq;
+    }
+
     public static boolean canSeeAnchors(LocalPlayer player) {
         return TeleportHandler.canBlockTeleport(player)
                 || TeleportHandler.canItemTeleport(player, InteractionHand.MAIN_HAND)
@@ -102,13 +107,6 @@ public final class TravelAnchorRenderer {
         for (Anchor anchor : frame.anchors) {
             poses.pushPose();
             poses.translate(anchor.pos.getX() - camera.pos.x, anchor.pos.getY() - camera.pos.y, anchor.pos.getZ() - camera.pos.z);
-            if (anchor.distanceSq > 10 * 10) {
-                double log = Math.log(Math.sqrt(anchor.distanceSq)) / 2.3;
-                float scale = (float) (log * log * log);
-                poses.translate(0.5, 0.5, 0.5);
-                poses.scale(scale, scale, scale);
-                poses.translate(-0.5, -0.5, -0.5);
-            }
             anchor.model.submit(poses, collector, anchor.light, OverlayTexture.NO_OVERLAY, 0);
             float lineWidth = anchor.distanceSq > 85 * 85 ? 1 : anchor.distanceSq > 38 * 38 ? 3 : 5;
             collector.submitShapeOutline(poses, Shapes.block(), RenderTypes.lines(), 0xFFFFFFFF, lineWidth, false);
@@ -132,7 +130,7 @@ public final class TravelAnchorRenderer {
                         camera.pos.z - (anchor.pos.getZ() + 0.5));
                 rotation.apply(poses);
                 poses.translate(0, 5, 0);
-                double scale = 0.1 * frame.fovScale * (anchor.active ? 1.3 : 1);
+                double scale = NAME_SCALE * 0.1 * frame.fovScale * (anchor.active ? 1.3 : 1);
                 rotation.reverse(poses);
                 poses.translate(0, 0.05 + scale * frame.lineHeight, 0);
                 poses.rotate(camera.orientation);
@@ -145,7 +143,7 @@ public final class TravelAnchorRenderer {
 
     private static double labelScale(Anchor anchor, Frame frame) {
         return Math.max(0.1, Math.sqrt(0.0035 * Math.sqrt(anchor.distanceSq)))
-                * frame.fovScale * (anchor.active ? 1.3 : 1);
+                * NAME_SCALE * frame.fovScale * (anchor.active ? 1.3 : 1);
     }
 
     private static void submitName(PoseStack poses, SubmitNodeCollector collector, Frame frame, Anchor anchor) {

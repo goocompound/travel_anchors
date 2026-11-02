@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -19,6 +20,15 @@ public class TileTravelAnchor extends BlockEntity {
 
     public TileTravelAnchor(BlockPos pos, BlockState state) {
         super(TravelAnchorRegistry.TRAVEL_ANCHOR_TILE.get(), pos, state);
+    }
+
+    @Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        // NBT may have been restored before this entity was attached to a level.
+        if (!level.isClientSide()) {
+            TravelAnchorList.get(level).setAnchor(level, worldPosition, name, mimic);
+        }
     }
 
     @Override

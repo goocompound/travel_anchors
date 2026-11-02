@@ -17,6 +17,14 @@ loom {
     accessWidenerPath = file('Fabric/src/main/resources/travelstaff-fabric.accesswidener')
 }
 
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'travelstaff-tests'
+        enableClientGameTests = false
+    }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"

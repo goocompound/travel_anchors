@@ -4,9 +4,11 @@ package io.github.goocompound.travelstaff;
 import io.github.goocompound.travelstaff.config.TravelStaffConfig;
 import io.github.goocompound.travelstaff.platform.Services;
 import io.github.goocompound.travelstaff.util.EventHandlers;
+import io.github.goocompound.travelstaff.util.TravelAnchorList;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -20,6 +22,8 @@ public final class FabricEventListener {
             server.getPlayerList().getPlayers().forEach(FabricNetworkHandler::sendConfig);
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(TravelStaffConfig::stopServer);
+        ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) ->
+                TravelAnchorList.get(level).removeMissingAnchors(level, chunk));
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             FabricNetworkHandler.sendConfig(handler.player);

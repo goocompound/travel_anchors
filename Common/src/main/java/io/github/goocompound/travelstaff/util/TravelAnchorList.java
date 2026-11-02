@@ -13,8 +13,10 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import net.minecraft.resources.Identifier;
@@ -148,6 +150,18 @@ public class TravelAnchorList extends SavedData {
             if (needsUpdate) {
                 Services.NETWORK.sendAnchorListToClients((ServerLevel) level, this);
             }
+        }
+    }
+
+    public void removeMissingAnchors(ServerLevel level, LevelChunk chunk) {
+        ChunkPos chunkPos = chunk.getPos();
+        // Only inspect this loaded chunk; unloaded destinations must remain discoverable.
+        boolean removed = this.anchors.keySet().removeIf(pos ->
+                chunkPos.contains(pos)
+                        && !chunk.getBlockState(pos).is(TravelAnchorRegistry.TRAVEL_ANCHOR.get()));
+        if (removed) {
+            this.setDirty();
+            Services.NETWORK.sendAnchorListToClients(level, this);
         }
     }
 

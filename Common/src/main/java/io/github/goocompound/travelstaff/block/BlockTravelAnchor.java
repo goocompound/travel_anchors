@@ -5,7 +5,9 @@ import io.github.goocompound.travelstaff.TravelAnchorRegistry;
 import io.github.goocompound.travelstaff.item.ItemTravelStaff;
 import io.github.goocompound.travelstaff.util.GuiHelper;
 import io.github.goocompound.travelstaff.util.TeleportHandler;
+import io.github.goocompound.travelstaff.util.TravelAnchorList;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -55,6 +57,13 @@ public class BlockTravelAnchor extends Block implements EntityBlock {
                 }
             }
         }
+    }
+
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean moved) {
+        super.affectNeighborsAfterRemoval(state, level, pos, moved);
+        // Movers such as Carry On can detach the block entity before removing the block.
+        TravelAnchorList.get(level).setAnchor(level, pos, null, null);
     }
 
     @Nonnull

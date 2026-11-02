@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "travelstaff-tests",
+  "version": "1.0.0",
+  "name": "Staff of Traveling Game Tests",
+  "environment": "server",
+  "entrypoints": {
+    "fabric-gametest": [
+      "io.github.goocompound.travelstaff.AnchorLifecycleGameTest"
+    ]
+  },
+  "depends": {
+    "travelstaff": "*"
+  }
+}

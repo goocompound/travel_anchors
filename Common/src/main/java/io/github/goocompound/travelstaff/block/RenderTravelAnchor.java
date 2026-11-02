@@ -3,6 +3,7 @@ package io.github.goocompound.travelstaff.block;
 
 import io.github.goocompound.travelstaff.TravelAnchorRegistry;
 import io.github.goocompound.travelstaff.render.TravelAnchorRenderer;
+import io.github.goocompound.travelstaff.util.TeleportHandler;
 import io.github.goocompound.travelstaff.util.TravelAnchorList;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -38,8 +39,15 @@ public final class RenderTravelAnchor implements BlockEntityRenderer<TileTravelA
                                    ModelFeatureRenderer.CrumblingOverlay crumbling) {
         BlockEntityRenderer.super.extractRenderState(anchor, state, partialTick, cameraPosition, crumbling);
         LocalPlayer player = Minecraft.getInstance().player;
-        state.visible = player == null || !TravelAnchorRenderer.canSeeAnchors(player)
-                || (anchor.getLevel() != null && TravelAnchorList.get(anchor.getLevel()).getAnchor(anchor.getBlockPos()) == null);
+        state.visible = true;
+        if (player != null && anchor.getLevel() != null && TravelAnchorRenderer.canSeeAnchors(player)
+                && TravelAnchorList.get(anchor.getLevel()).getEntry(anchor.getBlockPos()) != null) {
+            Vec3 playerPosition = player.getPosition(partialTick);
+            double distanceSq = anchor.getBlockPos().distToLowCornerSqr(playerPosition.x, playerPosition.y, playerPosition.z);
+            double maxDistance = TeleportHandler.getMaxDistance(player);
+            // Only hide the normal model when the overlay will replace it this frame.
+            state.visible = !TravelAnchorRenderer.isWithinOverlayRange(distanceSq, maxDistance * maxDistance);
+        }
         state.model.clear();
         if (state.visible) {
             BlockState mimic = anchor.getMimic();

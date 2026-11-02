@@ -23,6 +23,9 @@
     "main": [
       "io.github.goocompound.travelstaff.FabricModMain"
     ],
+    "modmenu": [
+      "io.github.goocompound.travelstaff.config.TravelStaffModMenu"
+    ],
     "client": [
       {
         "value": "io.github.goocompound.travelstaff.FabricModClient"
@@ -37,6 +40,9 @@
     "fabric-api": "*",
     "minecraft": "~26.3",
     "java": ">=25"
+  },
+  "suggests": {
+    "modmenu": "*"
   },
   "accessWidener": "travelstaff-fabric.accesswidener"
 }

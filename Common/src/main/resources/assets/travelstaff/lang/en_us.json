@@ -20,7 +20,33 @@
   "travelstaff.hop.fail": "Destination obstructed.",
 
   "enchantment.travelstaff.teleportation.desc": "Allows you to teleport as though holding a Staff of Traveling",
-  "enchantment.travelstaff.range.desc": "Increases the distance you may teleport with a Staff of Traveling"
+  "enchantment.travelstaff.range.desc": "Increases the distance you may teleport with a Staff of Traveling",
+
+  "config.travelstaff.title": "Staff of Traveling Settings",
+  "config.travelstaff.client": "Personal settings",
+  "config.travelstaff.world": "Current world settings",
+  "config.travelstaff.world.remote": "World settings (controlled by the server)",
+  "config.travelstaff.world.closed": "Open a world to edit its settings",
+  "config.travelstaff.isElevatorMode": "Elevator mode",
+  "config.travelstaff.isElevatorMode.help": "Jump or sneak on an anchor to travel vertically. When off, aim at the destination anchor.",
+  "config.travelstaff.nameplateScale": "Nameplate size: %s%%",
+  "config.travelstaff.nameplateScale.help": "Size of anchor names at all distances. Default: 70%.",
+  "config.travelstaff.maxTeleportDistance": "Anchor range",
+  "config.travelstaff.maxTeleportDistance.help": "Base anchor range in blocks, before the Range enchantment. Default: 64.",
+  "config.travelstaff.shortTeleportDistance": "Blink range",
+  "config.travelstaff.shortTeleportDistance.help": "Free-blink range in blocks. The Range enchantment does not affect this. Default: 7.",
+  "config.travelstaff.staffCooldownTicks": "Blink cooldown",
+  "config.travelstaff.staffCooldownTicks.help": "Cooldown after a successful free blink, in ticks (20 ticks = 1 second). Default: 20.",
+  "config.travelstaff.rangeEnchantScaling": "Range enchantment bonus",
+  "config.travelstaff.rangeEnchantScaling.help": "Extra anchor range per enchantment level: 0.5 means +50% per level. Default: 0.5.",
+  "config.travelstaff.maxAngle": "Targeting angle",
+  "config.travelstaff.maxAngle.help": "Maximum aiming angle in degrees, from 0 to 180. Default: 30.",
+  "config.travelstaff.reset": "Reset Defaults",
+  "config.travelstaff.save": "Save",
+  "config.travelstaff.saving": "Saving settings...",
+  "config.travelstaff.invalid": "Invalid value: %s",
+  "config.travelstaff.save.client_failed": "Could not save personal settings. See the log.",
+  "config.travelstaff.save.world_failed": "Personal settings saved; world settings could not be saved."
 }
 
 

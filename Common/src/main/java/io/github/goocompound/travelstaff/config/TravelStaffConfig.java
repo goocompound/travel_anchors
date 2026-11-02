@@ -54,6 +54,41 @@ public final class TravelStaffConfig {
         clientLoaded = true;
     }
 
+    public static void saveClient(ClientConfigData values) throws IOException {
+        if (!Double.isFinite(values.nameplateScale) || values.nameplateScale < 0.25 || values.nameplateScale > 2) {
+            throw new IllegalArgumentException("nameplateScale");
+        }
+        ConfigFileWriter.write(Path.of("config", CLIENT_FILE), clientDefaults(), values);
+        ClientConfigData copy = new ClientConfigData();
+        copy.isElevatorMode = values.isElevatorMode;
+        copy.nameplateScale = values.nameplateScale;
+        clientConfig = copy;
+        clientLoaded = true;
+    }
+
+    /** Called on the integrated server thread; remote clients cannot edit server settings. */
+    public static void saveServer(MinecraftServer server, SyncedConfigData values) throws IOException {
+        if (server != activeServer || server.isDedicatedServer() || !server.isSameThread()) {
+            throw new IllegalStateException("World settings may only be edited by the active integrated server");
+        }
+        validateServer(values);
+        Path path = server.getWorldPath(LevelResource.ROOT).resolve("serverconfig").resolve(SERVER_FILE);
+        ConfigFileWriter.write(path, serverDefaults(), values);
+        serverConfig = copyServer(values);
+    }
+
+    public static void validateServer(SyncedConfigData values) {
+        if (values.maxTeleportDistance < 0) throw new IllegalArgumentException("maxTeleportDistance");
+        if (values.shortTeleportDistance < 0) throw new IllegalArgumentException("shortTeleportDistance");
+        if (values.staffCooldownTicks < 0) throw new IllegalArgumentException("staffCooldownTicks");
+        if (!Float.isFinite(values.rangeEnchantScaling) || values.rangeEnchantScaling < 0) {
+            throw new IllegalArgumentException("rangeEnchantScaling");
+        }
+        if (!Double.isFinite(values.maxAngle) || values.maxAngle < 0 || values.maxAngle > 180) {
+            throw new IllegalArgumentException("maxAngle");
+        }
+    }
+
     public static void startServer(MinecraftServer server) {
         activeServer = server;
         reloadServer(server);
@@ -71,13 +106,17 @@ public final class TravelStaffConfig {
 
     public static void applySynced(SyncedConfigData received) {
         // Integrated clients must not share a mutable config object with their server.
+        syncedConfig = copyServer(received);
+    }
+
+    private static SyncedConfigData copyServer(SyncedConfigData received) {
         SyncedConfigData copy = new SyncedConfigData();
         copy.maxTeleportDistance = received.maxTeleportDistance;
         copy.shortTeleportDistance = received.shortTeleportDistance;
         copy.staffCooldownTicks = received.staffCooldownTicks;
         copy.rangeEnchantScaling = received.rangeEnchantScaling;
         copy.maxAngle = received.maxAngle;
-        syncedConfig = copy;
+        return copy;
     }
 
     public static void resetClient() {
@@ -108,9 +147,11 @@ public final class TravelStaffConfig {
         return """
                 {
                   // When true, while standing on an anchor, you can use space to go to an anchor directly above you or shift to go directly down. When false you must actually look at the target anchor to teleport.
-                  "isElevatorMode": %s
+                  "isElevatorMode": %s,
+                  // Anchor label size (0.25 to 2.0).
+                  "nameplateScale": %s
                 }
-                """.formatted(defaults.isElevatorMode);
+                """.formatted(defaults.isElevatorMode, defaults.nameplateScale);
     }
 
     static String serverDefaults() {

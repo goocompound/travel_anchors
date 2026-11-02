@@ -11,6 +11,10 @@ base {
 
 repositories {
     mavenCentral()
+    maven {
+        url = 'https://maven.terraformersmc.com/'
+        content { includeGroup 'com.terraformersmc' }
+    }
 }
 
 loom {
@@ -30,6 +34,8 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+    runtimeOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
     testImplementation platform('org.junit:junit-bom:5.12.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

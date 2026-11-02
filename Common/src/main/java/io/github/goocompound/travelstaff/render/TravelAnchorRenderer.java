@@ -2,6 +2,7 @@
 package io.github.goocompound.travelstaff.render;
 
 import io.github.goocompound.travelstaff.TravelAnchorRegistry;
+import io.github.goocompound.travelstaff.TravelStaffMain;
 import io.github.goocompound.travelstaff.block.RenderTravelAnchor;
 import io.github.goocompound.travelstaff.util.TeleportHandler;
 import io.github.goocompound.travelstaff.util.TravelAnchorList;
@@ -42,7 +43,6 @@ import java.util.List;
 public final class TravelAnchorRenderer {
     private static final RenderStateDataKey<Frame> FRAME = RenderStateDataKey.create(() -> "travelstaff:anchors");
     private static final BlockDisplayContext DISPLAY_CONTEXT = BlockDisplayContext.create();
-    private static final double NAME_SCALE = 0.7;
     private static BlockModelResolver modelResolver;
 
     private TravelAnchorRenderer() {
@@ -84,8 +84,11 @@ public final class TravelAnchorRenderer {
         }
         float fovScale = (float) Math.sin(Math.toRadians(minecraft.options.fov().get() / 4d));
         int background = (int) (minecraft.options.getBackgroundOpacity(0.5f) * 255) << 24;
+        double nameScale = TravelStaffMain.getClientConfig().nameplateScale;
+        if (!Double.isFinite(nameScale)) nameScale = 0.7;
+        nameScale = Math.clamp(nameScale, 0.25, 2);
         ((FabricRenderState) context.levelState()).setData(FRAME,
-                new Frame(List.copyOf(anchors), fovScale, background, minecraft.font.lineHeight));
+                new Frame(List.copyOf(anchors), fovScale, background, minecraft.font.lineHeight, nameScale));
     }
 
     public static boolean isWithinOverlayRange(double distanceSq, double maxDistanceSq) {
@@ -130,7 +133,7 @@ public final class TravelAnchorRenderer {
                         camera.pos.z - (anchor.pos.getZ() + 0.5));
                 rotation.apply(poses);
                 poses.translate(0, 5, 0);
-                double scale = NAME_SCALE * 0.1 * frame.fovScale * (anchor.active ? 1.3 : 1);
+                double scale = frame.nameScale * 0.1 * frame.fovScale * (anchor.active ? 1.3 : 1);
                 rotation.reverse(poses);
                 poses.translate(0, 0.05 + scale * frame.lineHeight, 0);
                 poses.rotate(camera.orientation);
@@ -143,7 +146,7 @@ public final class TravelAnchorRenderer {
 
     private static double labelScale(Anchor anchor, Frame frame) {
         return Math.max(0.1, Math.sqrt(0.0035 * Math.sqrt(anchor.distanceSq)))
-                * NAME_SCALE * frame.fovScale * (anchor.active ? 1.3 : 1);
+                * frame.nameScale * frame.fovScale * (anchor.active ? 1.3 : 1);
     }
 
     private static void submitName(PoseStack poses, SubmitNodeCollector collector, Frame frame, Anchor anchor) {
@@ -177,6 +180,6 @@ public final class TravelAnchorRenderer {
                           boolean emptyName, int light, boolean active, double distanceSq) {
     }
 
-    private record Frame(List<Anchor> anchors, float fovScale, int background, int lineHeight) {
+    private record Frame(List<Anchor> anchors, float fovScale, int background, int lineHeight, double nameScale) {
     }
 }

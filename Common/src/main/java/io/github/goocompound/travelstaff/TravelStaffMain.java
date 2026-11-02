@@ -31,6 +31,7 @@ public class TravelStaffMain {
 
 	public static final class ClientConfigData {
 		public boolean isElevatorMode = true;
+		public double nameplateScale = 0.7;
 	}
 
 	public static final class SyncedConfigData {

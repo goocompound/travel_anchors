@@ -8,13 +8,16 @@ Requires **Minecraft 26.3.x**, Fabric Loader **0.19.5+**, Fabric API for 26.3, a
 
 ## Usage
 
-- Shift-right-click with the staff to blink forward, including through walls.
+- Shift-right-click with the staff to blink forward (through walls).
 - Hold the staff and right-click toward a named anchor to teleport to it. Anchors and their names are visible through walls within range; the selected name is gold.
 - Stand on an anchor to see other anchors and teleport toward them with an empty hand.
 - Right-click an anchor while not standing on it to rename it.
 - With an empty main hand and a block in the offhand, right-click an anchor to disguise it.
 - In elevator mode, jump or sneak while standing on an anchor to travel directly up or down.
-- **Range** increases the staff's anchor range. **Teleportation** lets swords and digging tools act as a staff.
+- Enchantments:
+  - **Range** increases the staff's anchor range.
+  - **Teleportation** lets swords and digging tools act as a staff.
+- At a smithing table, combine an **ender pearl** in the template slot, a **sword/digging tool** in the equipment slot, and a **staff** in the addition slot. This adds Teleportation to the sword/tool and transfers highest input Range level.
 
 ## Configuration
 

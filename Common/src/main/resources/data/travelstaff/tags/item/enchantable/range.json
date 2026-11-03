@@ -1,5 +1,6 @@
 {
   "values": [
-    "travelstaff:travel_staff"
+    "travelstaff:travel_staff",
+    "#travelstaff:enchantable/teleportation"
   ]
 }

@@ -5,6 +5,7 @@ import io.github.goocompound.travelstaff.block.BlockTravelAnchor;
 import io.github.goocompound.travelstaff.block.TileTravelAnchor;
 import io.github.goocompound.travelstaff.item.ItemTravelStaff;
 import io.github.goocompound.travelstaff.item.ItemTravelAnchor;
+import io.github.goocompound.travelstaff.recipe.StaffUpgradeRecipe;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -49,7 +50,7 @@ public final class TravelAnchorRegistry {
     private TravelAnchorRegistry() {}
 
     public static void init() {
-        // Loading this class registers the fixed block, item and block-entity types.
+        Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, id("staff_upgrade"), StaffUpgradeRecipe.SERIALIZER);
     }
 
     public static Identifier id(String path) {

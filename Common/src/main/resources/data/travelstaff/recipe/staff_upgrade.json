@@ -1,0 +1,8 @@
+{
+  "type": "travelstaff:staff_upgrade",
+  "template": "minecraft:ender_pearl",
+  "base": "#travelstaff:enchantable/teleportation",
+  "addition": "travelstaff:travel_staff",
+  "teleportation": "travelstaff:teleportation",
+  "range": "travelstaff:range"
+}
